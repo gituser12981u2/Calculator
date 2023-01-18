@@ -1,118 +1,120 @@
 package Calculator;
+
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import Calculator.Token.TokenType;
 
-abstract class Lexer {
-    protected enum State {
+class Lexer {
+    enum State {
         DIGIT,
         OPERATOR,
         PARANTHESIS,
         WHITESPACE;
     }
 
+    private LinkedList<Token> tokens;
+    private State currentState;
+    private int index;
+    private MemoryPool<Token> tokenPool;
+
+    public Lexer() {
+        tokens = new LinkedList<>();
+        currentState = State.WHITESPACE;
+        index = 0;
+        tokenPool = new MemoryPool<>(7);
+    }
+
     public List<Token> tokenize(String input) {
-        input = "1 + 3";
-        List<Token> tokens = new ArrayList<>();
-        StringBuilder currentToken = new StringBuilder();
-        input = input.trim();
-        State currentState = State.WHITESPACE;
+        index = 0;
+        tokens.clear();
 
-        int openParan = 0;
-        int closedParan = 0;
+        try {
+            while (index < input.length()) {
 
+                char c = input.charAt(index);
 
-        if (input.isEmpty())
-            System.out.println("There is not input");
-
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-
-
-            if (c == '(') 
-                openParan++;
-
-            if (c == ')') 
-                closedParan++;
-            
-            if (openParan != closedParan) 
-                throw new IllegalStateException("Unbalanced Parentheses");
-
-            switch (currentState) {
-                case WHITESPACE:
-                    if (Character.isWhitespace(c)) {
-
-                    } else if (Character.isDigit(c) || c == '(') {
-                        currentState = State.DIGIT;
-                        i--;
-                    } else if (isOperator(c)) {
-                        currentState = State.OPERATOR;
-                        i--;
-                    } else {
-                        handleNonMatchingCharacter(c, currentToken, currentState, tokens);
-                    }
-                    break;
-                case DIGIT:
-                    if (Character.isWhitespace(c)) {
-                        continue;
-                    }
-                    if (c == '-' && (i == 0 || (isOperator(input.charAt(i - 1)) || input.charAt(i - 1) == '('))) {
-                        currentToken.append(c);
-                    }
-                    if (Character.isDigit(c)) {
-                        currentToken.append(c);
-                    } else if (isOperator(c) || c == '(' || c == ')') {
-                        if (c == '(') { // implicit multiplication
-                            tokens.add(new Token(TokenType.OPERATOR, "*"));
+                // Start FSM
+                switch (currentState) {
+                    case WHITESPACE:
+                        if (Character.isWhitespace(c))
+                            continue;
+                    case DIGIT:
+                        // if (Character.isWhitespace(c)) {
+                        // continue;
+                        // }
+                        // if (c == '-' && (index == 0 || (isOperator(input.charAt(index - 1)) ||
+                        // input.charAt(index - 1) == '('))) {
+                        // currentToken.append(c);
+                        // }
+                        // if (Character.isDigit(c)) {
+                        // currentToken.append(c);
+                        // } else if (isOperator(c) || c == '(' || c == ')') {
+                        // if (c == '(') { // implicit multiplication
+                        // tokens.add(new Token(TokenType.OPERATOR, "*"));
+                        // }
+                        // tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
+                        // currentToken.setLength(0);
+                        // currentState = State.DIGIT;
+                        // i--;
+                        // } else {
+                        // handleNonMatchingCharacter(c, currentToken, currentState, tokens);
+                        // }
+                        if (Character.isDigit(c) || c == '.') {
+                            tokens.append(c);
+                        } else {
+                            Token token = MemoryPool.getToken();
+                            token.setValue(tokens.toString());
+                            token.setType(TokenType.NUMBER);
+                            tokens.add(token);
+                            tokens.setLength(0);
+                            currentState = State.WHITESPACE;
+                        }
+                        break;
+                    case OPERATOR:
+                        if (Character.isWhitespace(c)) {
+                            continue;
+                        }
+                        if (isOperator(c)) {
+                            currentToken.append(c);
+                            if (i > 0 && (input.charAt(i - 1) == '(' || Character.isDigit(input.charAt(i - 1)))
+                                    && c == '-') {
+                                currentToken.append(c);
+                                currentState = State.DIGIT;
+                                break;
+                            }
+                            tokens.add(new Token(TokenType.OPERATOR, currentState.toString()));
+                            currentToken = new StringBuilder();
+                            currentToken.append(c);
+                        } else if (Character.isDigit(c) || c == '(') {
+                            tokens.add(new Token(TokenType.OPERATOR, currentToken.toString()));
+                            currentToken.setLength(0);
+                            currentState = State.OPERATOR;
+                        } else {
+                            handleNonMatchingCharacter(c, currentToken, currentState, tokens);
+                        }
+                        break;
+                    case PARANTHESIS:
+                        if (!(Character.isDigit(c) || c == '(' || c == ')')) {
+                            handleNonMatchingCharacter(c, currentToken, currentState, tokens);
+                        }
+                        if (c == ')') { // implicit multiplication
+                            if (i + 1 < input.length() && Character.isDigit(input.charAt(i + 1))) {
+                                tokens.add(new Token(TokenType.OPERATOR, "*"));
+                            }
                         }
                         tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
-                        currentToken = new StringBuilder();
-                        currentState = State.DIGIT;
+                        currentToken.setLength(0);
+                        currentState = State.PARANTHESIS;
                         i--;
-                    } else {
-                        handleNonMatchingCharacter(c, currentToken, currentState, tokens);
-                    }
-                    break;
-                case OPERATOR:
-                    if (Character.isWhitespace(c)) {
-                        continue;
-                    }
-                    if (isOperator(c)) {
-                        currentToken.append(c);
-                        if (i > 0 && (input.charAt(i - 1) == '(' || Character.isDigit(input.charAt(i - 1))) && c == '-') {
-                            currentToken.append(c);
-                            currentState = State.DIGIT;
-                            break;
-                        }
-                        tokens.add(new Token(TokenType.OPERATOR, currentState.toString()));
-                        currentToken = new StringBuilder();
-                        currentToken.append(c);
-                    } else if (Character.isDigit(c) || c == '(') {
-                        tokens.add(new Token(TokenType.OPERATOR, currentToken.toString()));
-                        currentToken = new StringBuilder();
-                        currentState = State.OPERATOR;
-                    } else {
-                        handleNonMatchingCharacter(c, currentToken, currentState, tokens);
-                    }
-                    break;
-                case PARANTHESIS:
-                    if (!(Character.isDigit(c) || c == '(' || c == ')')) {
-                        handleNonMatchingCharacter(c, currentToken, currentState, tokens);
-                    }
-                    if (c == ')') { // implicit multiplication
-                        if (i+1 < input.length() && Character.isDigit(input.charAt(i+1))) {
-                            tokens.add(new Token(TokenType.OPERATOR, "*"));
-                        }
-                    }
-                    tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
-                    currentToken = new StringBuilder();
-                    currentState = State.PARANTHESIS;
-                    i--;
-                    break;
-                default:
-                    break;
+                        break;
+                    default:
+                        break;
+                }
             }
+        } catch (java.lang.NullPointerException e) {
+            System.out.println("There is no input");
         }
         if (currentToken.length() > 0) {
             tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
@@ -137,10 +139,10 @@ abstract class Lexer {
         return "+-*/^".indexOf(c) != -1;
     }
 
-    private void handleNonMatchingCharacter(char c, StringBuilder currentToken, Lexer.State currentState, List<Token> tokens) {
+    private void handleNonMatchingCharacter(char c, StringBuilder currentToken, Lexer.State currentState,
+            List<Token> tokens) {
         if (!(Character.isDigit(c) && !isOperator(c) && c == '(' && c == ')')) {
             throw new IllegalArgumentException("error: illegal character " + c);
         }
     }
 }
-
