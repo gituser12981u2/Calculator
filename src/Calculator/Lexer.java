@@ -23,7 +23,7 @@ class Lexer {
         tokens = new LinkedList<>();
         currentState = State.WHITESPACE;
         index = 0;
-        tokenPool = new MemoryPool<>(7);
+        tokenPool = new MemoryPool<>();
     }
 
     public List<Token> tokenize(String input) {
