@@ -1,4 +1,5 @@
 package Calculator;
+
 public class Token {
     enum TokenType {
         NUMBER,
@@ -6,14 +7,16 @@ public class Token {
         PARENTHESIS,
         WHITESPACE;
     }
-    
+
     private final TokenType type;
     private final String value;
+    private int index;
     private int priority;
 
-    public Token(TokenType type, String value) {
+    public Token(TokenType type, String value, int index) {
         this.type = type;
         this.value = value;
+        this.index = index;
     }
 
     public TokenType getType() {
@@ -30,6 +33,10 @@ public class Token {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public int getIndex() {
+        return index;
     }
 
 }
