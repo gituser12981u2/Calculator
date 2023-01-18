@@ -1,3 +1,4 @@
 bin/Calculator
 bin/
 src/Calculator/test/test.java
+.vscode
