@@ -1,18 +1,14 @@
-## Getting Started
+## Abstract
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+## Memory Pool
 
-## Folder Structure
+### The Memory Pool pooles in highly used tokens to be stored in memory in one instance instead of several eg
 
-The workspace contains two folders by default, where:
+    - Operators
+    - Some highly used numbers
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+ > Uses a custom data structure to handle both operators and numbers in the most proficent way
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+#### A more in-depth look - Basic uses of the Memory Pool
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+> The Memory pool will serve as a `highly` specilized garbage collector that will improve preformance for the calculator. In calculations the only things often repetead are operation and certain numbers. So the Memory Pool will save memory by pre-allocating the amount of operators--eg however many operators there are--and everytime there is a operator called for in the user input, it will be referenced to the memory where that operator is already present. For example, an expression such as (3 * 4 + 5 * 3) has two multiplication operators. The memory pool will reference the two operators into one place in memory and make a note for the program that there is a scale of 2 multiplication operators in index 1 and 5.
