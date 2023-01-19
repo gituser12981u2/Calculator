@@ -14,25 +14,22 @@ class Lexer {
         WHITESPACE;
     }
 
-    private LinkedList<Token> tokens;
+    private LinkedList<Token> tokenList;
     private State currentState;
-    private int index;
-    private MemoryPool<Token> tokenPool;
+    private MemoryPool memoryPool;
 
     public Lexer() {
-        tokens = new LinkedList<>();
-        currentState = State.WHITESPACE;
-        index = 0;
-        tokenPool = new MemoryPool<>();
+        this.memoryPool = new MemoryPool();
+        this.tokenList = new LinkedList<>();
     }
 
     public List<Token> tokenize(String input) {
-        index = 0;
-        tokens.clear();
+        StringBuilder currentToken = new StringBuilder();
+        currentState = State.WHITESPACE;
+        int index = 0;
 
         try {
             while (index < input.length()) {
-
                 char c = input.charAt(index);
 
                 // Start FSM
@@ -41,35 +38,25 @@ class Lexer {
                         if (Character.isWhitespace(c))
                             continue;
                     case DIGIT:
-                        // if (Character.isWhitespace(c)) {
-                        // continue;
-                        // }
-                        // if (c == '-' && (index == 0 || (isOperator(input.charAt(index - 1)) ||
-                        // input.charAt(index - 1) == '('))) {
-                        // currentToken.append(c);
-                        // }
-                        // if (Character.isDigit(c)) {
-                        // currentToken.append(c);
-                        // } else if (isOperator(c) || c == '(' || c == ')') {
-                        // if (c == '(') { // implicit multiplication
-                        // tokens.add(new Token(TokenType.OPERATOR, "*"));
-                        // }
-                        // tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
-                        // currentToken.setLength(0);
-                        // currentState = State.DIGIT;
-                        // i--;
-                        // } else {
-                        // handleNonMatchingCharacter(c, currentToken, currentState, tokens);
-                        // }
-                        if (Character.isDigit(c) || c == '.') {
-                            tokens.append(c);
+                        if (Character.isWhitespace(c)) {
+                            continue;
+                        }
+                        if (c == '-' && (index == 0 || (isOperator(input.charAt(index - 1)) ||
+                                input.charAt(index - 1) == '('))) {
+                            currentToken.append(c);
+                        }
+                        if (Character.isDigit(c)) {
+                            currentToken.append(c);
+                        } else if (isOperator(c) || c == '(' || c == ')') {
+                            if (c == '(') { // implicit multiplication
+                                tokens.add(new Token(TokenType.OPERATOR, "*"));
+                            }
+                            tokens.add(new Token(getTokenType(currentState), currentToken.toString()));
+                            currentToken.setLength(0);
+                            currentState = State.DIGIT;
+                            i--;
                         } else {
-                            Token token = MemoryPool.getToken();
-                            token.setValue(tokens.toString());
-                            token.setType(TokenType.NUMBER);
-                            tokens.add(token);
-                            tokens.setLength(0);
-                            currentState = State.WHITESPACE;
+                            handleNonMatchingCharacter(c, currentToken, currentState, tokens);
                         }
                         break;
                     case OPERATOR:
